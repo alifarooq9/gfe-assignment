@@ -4,7 +4,7 @@
 
 #### Milestones
 
-- [ ] **Milestone 1** – Display a table view of all tasks.
+- [x] **Milestone 1** – Display a table view of all tasks.
 - [ ] **Milestone 2** – Task management
   - [ ] Create a task – *(using a modal form that includes fields for title, priority, and status)*
   - [ ] Edit a task – *(using a modal form that includes fields for title, priority, and status)*
@@ -13,11 +13,11 @@
   - [ ] Enable sorting by clicking on column headers.
   - [ ] Implement text-based search filtering.
   - [ ] Allow filtering by status or priority.
-- [ ] **Milestone 4** – Pagination
-  - [ ] Limit the number of tasks per page *(e.g., 10, 20, 30, 40, 50)*.
-  - [ ] Provide controls to change the number of tasks per page.
-  - [ ] Clearly indicate the current page.
-  - [ ] Allow dynamic adjustment of the page size.
+- [x] **Milestone 4** – Pagination
+  - [x] Limit the number of tasks per page *(e.g., 10, 20, 30, 40, 50)*.
+  - [x] Change the page controls.
+  - [x] Clearly indicate the current page.
+  - [x] Allow dynamic adjustment of the page size.
 - [ ] **Milestone 5** – Database persistence *(transition from localStorage to a database)*
   - [ ] Implement reading from the database.
   - [ ] Implement writing to the database.
