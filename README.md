@@ -34,7 +34,7 @@
 
 #### Additional Milestones
 
-- Milestone 7 - Animations and transitions
-- Milestone 8 - Undo/Redo
-- Milestone 9 - Multiselect for bulk actions
-- Milestone 10 - Kanban board view
+- [ ] Milestone 7 - Animations and transitions
+- [ ] Milestone 8 - Undo/Redo
+- [ ] Milestone 9 - Multiselect for bulk actions
+- [ ] Milestone 10 - Kanban board view
