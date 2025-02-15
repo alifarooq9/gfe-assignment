@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export type Column<T> = {
@@ -25,8 +26,26 @@ export const DEFAULTROWSSIZE = [10, 20, 30, 40, 50] as const;
 export type RowSize = (typeof DEFAULTROWSSIZE)[number];
 
 export function DataTable<T>({ columns, data }: DataTableProps<T>) {
-  const [rowSize, setRowSize] = useState<RowSize>(10);
-  const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+
+  // Get the default row size from the URL params if it exists and is valid
+  const defaultRowSize =
+    params.get("rowSize") &&
+    DEFAULTROWSSIZE.includes(parseInt(params.get("rowSize")!) as RowSize)
+      ? (parseInt(params.get("rowSize")!) as RowSize)
+      : 10;
+
+  // Get the default page from the URL params if it exists and is valid can't be greater than the max page
+  const defaultPage =
+    params.get("page") &&
+    parseInt(params.get("page")!) <= data.length / defaultRowSize &&
+    parseInt(params.get("page")!) > 0
+      ? parseInt(params.get("page")!)
+      : 1;
+
+  const [rowSize, setRowSize] = useState<RowSize>(defaultRowSize);
+  const [page, setPage] = useState(defaultPage);
 
   // Calculate the maximum number of pages based on the number of rows and the row size
   const maxPage = Math.ceil(data.length / rowSize);

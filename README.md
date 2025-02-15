@@ -38,3 +38,9 @@
 - [ ] **Milestone 8** – Add undo/redo functionality.
 - [ ] **Milestone 9** – Enable multiselect for bulk actions.
 - [ ] **Milestone 10** – Create a Kanban board view.
+
+#### Bonus Milestones
+
+- [ ] **Bonus Milestone 1** Include Database persistence *(transition from localStorage to a database)*
+- [ ] **Bonus Milestone 2** Server side data fetching for table (to reduce database query count)
+- [ ] **Bonus Milestone 3** User Authentication
