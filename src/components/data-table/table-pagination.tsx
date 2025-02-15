@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useDebounce } from "use-debounce";
 
 type TablePaginationProps = {
   rowSize: number;
@@ -41,17 +42,23 @@ export function TablePagination({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams.toString());
 
+  const [debouncePage] = useDebounce(page, 200);
+  const [debounceRowSize] = useDebounce(rowSize, 200);
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    params.set("page", newPage.toString());
-    router.push(`${pathname}?${params.toString()}`);
   };
 
   const handleRowsPerPageChange = (newRowsPerPage: RowSize) => {
     setRowSize(newRowsPerPage);
-    params.set("rowSize", newRowsPerPage.toString());
-    router.push(`${pathname}?${params.toString()}`);
   };
+
+  useEffect(() => {
+    params.set("page", debouncePage.toString());
+    params.set("rowSize", debounceRowSize.toString());
+    router.push(`${pathname}?${params.toString()}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncePage, debounceRowSize]);
 
   useEffect(() => {
     // Update the page if the row size changes if the page is greater than the max page
@@ -125,7 +132,7 @@ export function TablePagination({
           }
         >
           <SelectTrigger>
-            <SelectValue defaultValue={DEFAULTROWSSIZE[0].toString()}>
+            <SelectValue defaultValue={DEFAULTROWSSIZE[0]?.toString()}>
               {rowSize}
             </SelectValue>
           </SelectTrigger>

@@ -42,5 +42,5 @@
 #### Bonus Milestones
 
 - [ ] **Bonus Milestone 1** Include Database persistence *(transition from localStorage to a database)*
-- [ ] **Bonus Milestone 2** Server side data fetching for table (to reduce database query count)
+- [x] **Bonus Milestone 2** Server side data fetching for table (to reduce database query count)
 - [ ] **Bonus Milestone 3** User Authentication

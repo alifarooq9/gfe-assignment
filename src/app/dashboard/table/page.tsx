@@ -1,10 +1,16 @@
 import { TableView } from "@/app/dashboard/table/components/tableview";
 import { Button } from "@/components/ui/button";
-import { mock } from "@/config/mock-data";
 import { PlusCircleIcon } from "lucide-react";
+import { Suspense } from "react";
 
-export default function TableViewPage() {
-  const data = mock;
+type TableViewPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function TableViewPage({
+  searchParams,
+}: TableViewPageProps) {
+  const params = await searchParams;
 
   return (
     <main className="grid gap-4">
@@ -16,7 +22,14 @@ export default function TableViewPage() {
           Add Task
         </Button>
       </div>
-      <TableView tasks={data} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <TableView
+          searchParams={{
+            page: params.page as string,
+            rowSize: params.rowSize as string,
+          }}
+        />
+      </Suspense>
     </main>
   );
 }
