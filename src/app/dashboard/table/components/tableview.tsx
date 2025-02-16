@@ -41,6 +41,7 @@ export async function TableView(params: TableViewProps) {
       data={taskRequest.data as Task[]}
       columns={taskColumns}
       maxPage={taskRequest.maxPage!}
+      searchFilterAccessor="title"
     />
   );
 }

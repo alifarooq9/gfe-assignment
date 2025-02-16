@@ -19,28 +19,36 @@ import {
   ChevronsRightIcon,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 
 type TablePaginationProps = {
-  rowSize: number;
-  setRowSize: Dispatch<SetStateAction<RowSize>>;
-  page: number;
-  setPage: Dispatch<SetStateAction<number>>;
   maxPage: number;
 };
 
-export function TablePagination({
-  rowSize,
-  setRowSize,
-  maxPage,
-  page,
-  setPage,
-}: TablePaginationProps) {
+export function TablePagination({ maxPage }: TablePaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams.toString());
+
+  // Get the default row size from the URL params if it exists and is valid
+  const defaultRowSize =
+    params.get("rowSize") &&
+    DEFAULTROWSSIZE.includes(parseInt(params.get("rowSize")!) as RowSize)
+      ? (parseInt(params.get("rowSize")!) as RowSize)
+      : 10;
+
+  // Get the default page from the URL params if it exists and is valid can't be greater than the max page
+  const defaultPage =
+    params.get("page") &&
+    parseInt(params.get("page")!) > 0 &&
+    parseInt(params.get("page")!) <= maxPage
+      ? parseInt(params.get("page")!)
+      : 1;
+
+  const [rowSize, setRowSize] = useState<RowSize>(defaultRowSize);
+  const [page, setPage] = useState(defaultPage);
 
   const [debouncePage] = useDebounce(page, 200);
   const [debounceRowSize] = useDebounce(rowSize, 200);
