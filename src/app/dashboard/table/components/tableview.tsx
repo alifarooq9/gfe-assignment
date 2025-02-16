@@ -3,6 +3,7 @@ import {
   DataTable,
   type RowSize,
 } from "@/components/data-table/data-table";
+import type { SearchParam } from "@/components/data-table/data-table-search-filter";
 import { getTasksAction } from "@/server/actions/tasks/actions";
 import type { Task } from "@/server/actions/tasks/types";
 
@@ -18,6 +19,7 @@ type TableViewProps = {
     page: string;
     rowSize: string;
     sortBy: string;
+    search: string;
   };
 };
 
@@ -30,6 +32,9 @@ export async function TableView(params: TableViewProps) {
       ? (Number(params.searchParams.rowSize) as RowSize)
       : undefined,
     sortBy: params.searchParams.sortBy ? params.searchParams.sortBy : undefined,
+    search: params.searchParams.search
+      ? (JSON.parse(params.searchParams.search) as SearchParam)
+      : undefined,
   });
 
   if (!taskRequest.success) {

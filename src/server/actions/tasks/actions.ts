@@ -16,6 +16,9 @@ const getTasksSchema = z.object({
     .optional(),
   page: z.number().optional(),
   sortBy: z.string().optional(),
+  search: z
+    .object({ searchAccessor: z.string(), value: z.string() })
+    .optional(),
 });
 
 const data = mock;
@@ -67,6 +70,17 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
     // default to sorting by id in ascending order
     processedData = data.sort((a, b) => {
       return a.id - b.id;
+    });
+  }
+
+  // Apply search
+  if (params.search) {
+    processedData = processedData.filter((item: Record<string, unknown>) => {
+      const value = item[params.search!.searchAccessor];
+      return (
+        typeof value === "string" &&
+        value.toLowerCase().includes(params.search!.value.toLowerCase())
+      );
     });
   }
 

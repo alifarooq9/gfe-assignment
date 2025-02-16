@@ -1,7 +1,7 @@
 "use client";
 
-import { SortableRowHead } from "@/components/data-table/sortable-row-head";
-import { TablePagination } from "@/components/data-table/table-pagination";
+import { DataTableSortableRowHead } from "@/components/data-table/data-table-sortable-row-head";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 
 import {
   Table,
@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DataTableSearchFilter } from "@/components/data-table/data-table-search-filter";
 
 export type Column<T> = {
   header: string;
@@ -27,36 +28,58 @@ type DataTableProps<T> = {
 export const DEFAULTROWSSIZE = [10, 20, 30, 40, 50] as const;
 export type RowSize = (typeof DEFAULTROWSSIZE)[number];
 
-export function DataTable<T>({ columns, data, maxPage }: DataTableProps<T>) {
+export function DataTable<T>({
+  columns,
+  data,
+  maxPage,
+  searchFilterAccessor,
+}: DataTableProps<T>) {
   return (
     <div className="grid gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <DataTableSearchFilter
+          searchFilterAccessor={searchFilterAccessor as string}
+        />
+      </div>
+
       <div className="overflow-hidden rounded-md border border-border">
         <Table>
           <TableHeader>
             <TableRow>
               {columns.map((column, index) => (
-                <SortableRowHead column={column} key={index} />
+                <DataTableSortableRowHead column={column} key={index} />
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((row, index) => (
-              <TableRow key={index}>
-                {columns.map((column, colIndex) => {
-                  const content =
-                    typeof column.accessor === "function"
-                      ? column.accessor(row)
-                      : (row[column.accessor] as React.ReactNode);
+            {data.length > 0 ? (
+              data.map((row, index) => (
+                <TableRow key={index}>
+                  {columns.map((column, colIndex) => {
+                    const content =
+                      typeof column.accessor === "function"
+                        ? column.accessor(row)
+                        : (row[column.accessor] as React.ReactNode);
 
-                  return <TableCell key={colIndex}>{content}</TableCell>;
-                })}
+                    return <TableCell key={colIndex}>{content}</TableCell>;
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
 
-      <TablePagination maxPage={maxPage} />
+      <DataTablePagination maxPage={maxPage} />
     </div>
   );
 }

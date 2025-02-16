@@ -26,7 +26,7 @@ type TablePaginationProps = {
   maxPage: number;
 };
 
-export function TablePagination({ maxPage }: TablePaginationProps) {
+export function DataTablePagination({ maxPage }: TablePaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

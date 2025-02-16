@@ -33,6 +33,7 @@ export default async function TableViewPage({
             page: params.page as string,
             rowSize: params.rowSize as string,
             sortBy: params.sortBy as string,
+            search: params.search as string,
           }}
         />
       </Suspense>

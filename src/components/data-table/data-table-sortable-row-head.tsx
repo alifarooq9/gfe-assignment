@@ -18,7 +18,9 @@ type SortableRowHeadProps<T> = {
   column: Column<T>;
 };
 
-export function SortableRowHead<T>({ column }: SortableRowHeadProps<T>) {
+export function DataTableSortableRowHead<T>({
+  column,
+}: SortableRowHeadProps<T>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

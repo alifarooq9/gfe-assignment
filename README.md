@@ -11,7 +11,7 @@
   - [ ] Delete a task – *(using a modal form for confirmation)*
 - [ ] **Milestone 3** – Sorting and filtering tasks
   - [x] Enable sorting by clicking on column headers.
-  - [ ] Implement text-based search filtering.
+  - [x] Implement text-based search filtering.
   - [ ] Allow filtering by status or priority.
 - [x] **Milestone 4** – Pagination
   - [x] Limit the number of tasks per page *(e.g., 10, 20, 30, 40, 50)*.
