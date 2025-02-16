@@ -1,4 +1,4 @@
-import { HeaderNav } from "@/components/dashboard-layout/dashboard-header-nav";
+import { HeaderNav } from "@/app/dashboard/components/dashboard-header-nav";
 import { siteUrls } from "@/config/site-urls";
 import Link from "next/link";
 

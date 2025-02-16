@@ -1,4 +1,4 @@
-import { Header } from "@/components/dashboard-layout/dashboard-header";
+import { Header } from "@/app/dashboard/components/dashboard-header";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
