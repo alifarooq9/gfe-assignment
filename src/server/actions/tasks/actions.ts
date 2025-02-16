@@ -2,6 +2,7 @@
 
 import { mock } from "@/config/mock-data";
 import { z } from "zod";
+import { unstable_noStore as noStore } from "next/cache";
 
 const getTasksSchema = z.object({
   rowSize: z
@@ -14,17 +15,21 @@ const getTasksSchema = z.object({
     ])
     .optional(),
   page: z.number().optional(),
+  sortBy: z.string().optional(),
 });
 
 const data = mock;
 
 export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
+  noStore();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   const validedRequestBody = getTasksSchema.safeParse(params);
 
   if (validedRequestBody.success === false) {
     return {
       success: false,
-      message: validedRequestBody.error.message,
+      message: `${validedRequestBody.error.issues[0]?.path[0]} - ${validedRequestBody.error.issues[0]?.message}`,
     };
   }
 
@@ -39,12 +44,36 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
 
   // Calculate the maximum number of pages based on the number of rows and the row size
   const maxPage = Math.ceil(data.length / defaultRowSize);
-  const paginatedData = data.slice(
-    defaultRowSize * (defaultPage - 1),
-    defaultRowSize * defaultPage,
-  );
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const [accessor, direction] = params.sortBy?.split(".") ?? [];
+
+  let processedData = data;
+
+  // Apply sorting if specified
+  if (params.sortBy && accessor && direction) {
+    processedData = data.sort((a, b) => {
+      const aValue = a[accessor as keyof typeof a];
+      const bValue = b[accessor as keyof typeof b];
+
+      if (aValue < bValue) {
+        return direction === "asc" ? -1 : 1;
+      } else if (aValue > bValue) {
+        return direction === "asc" ? 1 : -1;
+      } else {
+        return 0;
+      }
+    });
+  } else {
+    // default to sorting by id in ascending order
+    processedData = data.sort((a, b) => {
+      return a.id - b.id;
+    });
+  }
+
+  // Apply pagination
+  const startIndex = defaultRowSize * (defaultPage - 1);
+  const endIndex = defaultRowSize * defaultPage;
+  const paginatedData = processedData.slice(startIndex, endIndex);
 
   return {
     success: true,

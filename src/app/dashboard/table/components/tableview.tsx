@@ -7,8 +7,8 @@ import { getTasksAction } from "@/server/actions/tasks/actions";
 import type { Task } from "@/server/actions/tasks/types";
 
 const taskColumns: Column<Task>[] = [
-  { header: "Task ID", accessor: "id" },
-  { header: "Title", accessor: "title" },
+  { header: "Task ID", accessor: "id", sortable: true },
+  { header: "Title", accessor: "title", sortable: true },
   { header: "Priority", accessor: "priority" },
   { header: "Status", accessor: "status" },
 ];
@@ -17,13 +17,19 @@ type TableViewProps = {
   searchParams: {
     page: string;
     rowSize: string;
+    sortBy: string;
   };
 };
 
 export async function TableView(params: TableViewProps) {
   const taskRequest = await getTasksAction({
-    page: Number(params.searchParams.page),
-    rowSize: Number(params.searchParams.rowSize) as RowSize,
+    page: params.searchParams.page
+      ? Number(params.searchParams.page)
+      : undefined,
+    rowSize: params.searchParams.rowSize
+      ? (Number(params.searchParams.rowSize) as RowSize)
+      : undefined,
+    sortBy: params.searchParams.sortBy ? params.searchParams.sortBy : undefined,
   });
 
   if (!taskRequest.success) {

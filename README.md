@@ -10,7 +10,7 @@
   - [ ] Edit a task – *(using a modal form that includes fields for title, priority, and status)*
   - [ ] Delete a task – *(using a modal form for confirmation)*
 - [ ] **Milestone 3** – Sorting and filtering tasks
-  - [ ] Enable sorting by clicking on column headers.
+  - [x] Enable sorting by clicking on column headers.
   - [ ] Implement text-based search filtering.
   - [ ] Allow filtering by status or priority.
 - [x] **Milestone 4** – Pagination
