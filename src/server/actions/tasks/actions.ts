@@ -37,31 +37,41 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
   }
 
   // Get the default row size from the URL params if it exists and is valid
-  const defaultRowSize =
+  const rowSize =
     params.rowSize && [10, 20, 30, 40, 50].includes(params.rowSize)
       ? params.rowSize
       : 10;
 
   // Get the default page from the URL params if it exists and is valid can't be greater than the max page
-  const defaultPage = params.page && params.page > 0 ? params.page : 1;
-
-  // Calculate the maximum number of pages based on the number of rows and the row size
-  const maxPage = Math.ceil(data.length / defaultRowSize);
+  const page = params.page && params.page > 0 ? params.page : 1;
 
   const [accessor, direction] = params.sortBy?.split(".") ?? [];
 
   let processedData = data;
 
-  // Apply sorting if specified
+  // Apply sorting if specified, it should not keep the first on uppercase, it should consider all the words in lowercase
   if (params.sortBy && accessor && direction) {
     processedData = data.sort((a, b) => {
       const aValue = a[accessor as keyof typeof a];
       const bValue = b[accessor as keyof typeof b];
 
-      if (aValue < bValue) {
-        return direction === "asc" ? -1 : 1;
-      } else if (aValue > bValue) {
-        return direction === "asc" ? 1 : -1;
+      const aValueStr = String(aValue).toLowerCase();
+      const bValueStr = String(bValue).toLowerCase();
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        if (aValueStr < bValueStr) {
+          return direction === "asc" ? -1 : 1;
+        } else if (aValueStr > bValueStr) {
+          return direction === "asc" ? 1 : -1;
+        } else {
+          return 0;
+        }
+      } else if (typeof aValue === "number" && typeof bValue === "number") {
+        return direction === "asc" ? aValue - bValue : bValue - aValue;
+      } else if (typeof aValue === "boolean" && typeof bValue === "boolean") {
+        return direction === "asc"
+          ? Number(aValue) - Number(bValue)
+          : Number(bValue) - Number(aValue);
       } else {
         return 0;
       }
@@ -85,9 +95,12 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
   }
 
   // Apply pagination
-  const startIndex = defaultRowSize * (defaultPage - 1);
-  const endIndex = defaultRowSize * defaultPage;
+  const startIndex = rowSize * (page - 1);
+  const endIndex = rowSize * page;
   const paginatedData = processedData.slice(startIndex, endIndex);
+
+  // Calculate the maximum number of pages based on the number of rows and the row size
+  const maxPage = Math.ceil(processedData.length / rowSize);
 
   return {
     success: true,
