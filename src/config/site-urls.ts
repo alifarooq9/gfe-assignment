@@ -1,4 +1,4 @@
-export const siteUrls = {
+export const SITE_URLS = {
   dashboard: {
     base: "/dashboard",
     tableView: "/dashboard/table",

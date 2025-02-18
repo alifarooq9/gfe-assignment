@@ -1,7 +1,7 @@
 "use client";
 
 import { buttonVariants } from "@/components/ui/button";
-import { siteUrls } from "@/config/site-urls";
+import { SITE_URLS } from "@/config/site-urls";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,12 +12,12 @@ export function HeaderNav() {
   return (
     <nav className="flex items-center gap-0">
       <Link
-        href={siteUrls.dashboard.tableView}
+        href={SITE_URLS.dashboard.tableView}
         className={buttonVariants({
           variant: "ghost",
           className: cn(
             "rounded-b-none",
-            getActive(pathname, siteUrls.dashboard.tableView)
+            getActive(pathname, SITE_URLS.dashboard.tableView)
               ? "border-b-2 border-primary"
               : "",
           ),
@@ -26,12 +26,12 @@ export function HeaderNav() {
         Table View
       </Link>
       <Link
-        href={siteUrls.dashboard.kanbanView}
+        href={SITE_URLS.dashboard.kanbanView}
         className={buttonVariants({
           variant: "ghost",
           className: cn(
             "rounded-b-none",
-            getActive(pathname, siteUrls.dashboard.kanbanView)
+            getActive(pathname, SITE_URLS.dashboard.kanbanView)
               ? "border-b-2 border-primary"
               : "",
           ),

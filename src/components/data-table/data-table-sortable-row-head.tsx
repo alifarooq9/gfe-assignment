@@ -10,6 +10,7 @@ import {
   ArrowDownAZIcon,
   ArrowUpAZIcon,
   ChevronsUpDownIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TableHead } from "@/components/ui/table";
@@ -74,16 +75,25 @@ export function DataTableSortableRowHead<T>({
               checked={isSorted && isSortedAsc}
               onClick={() => handleSort(column, "asc")}
             >
-              Asc
+              <span className="flex items-center gap-1">
+                <ArrowDownAZIcon className="h-3.5 w-3.5" />
+                Asc
+              </span>
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               onClick={() => handleSort(column, "desc")}
               checked={isSorted && !isSortedAsc}
             >
-              Desc
+              <span className="flex items-center gap-1">
+                <ArrowUpAZIcon className="h-3.5 w-3.5" />
+                Desc
+              </span>
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem onClick={removeSort}>
-              Remove
+              <span className="flex items-center gap-1">
+                <Trash2Icon className="h-3.5 w-3.5" />
+                Remove
+              </span>
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>

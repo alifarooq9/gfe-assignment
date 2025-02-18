@@ -6,7 +6,7 @@
 
 - [x] **Milestone 1** – Display a table view of all tasks.
 - [ ] **Milestone 2** – Task management
-  - [ ] Create a task – *(using a modal form that includes fields for title, priority, and status)*
+  - [x] Create a task – *(using a modal form that includes fields for title, priority, and status)*
   - [ ] Edit a task – *(using a modal form that includes fields for title, priority, and status)*
   - [ ] Delete a task – *(using a modal form for confirmation)*
 - [ ] **Milestone 3** – Sorting and filtering tasks

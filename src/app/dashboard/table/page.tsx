@@ -1,6 +1,5 @@
+import AddTasksSheet from "@/app/dashboard/table/components/add-tasks-sheet";
 import { TableView } from "@/app/dashboard/table/components/tableview";
-import { Button } from "@/components/ui/button";
-import { PlusCircleIcon } from "lucide-react";
 import { Suspense } from "react";
 
 type TableViewPageProps = {
@@ -22,10 +21,7 @@ export default async function TableViewPage({
           </span>
         </h1>
 
-        <Button size="sm">
-          <PlusCircleIcon className="h-3.5 w-3.5" />
-          Add Task
-        </Button>
+        <AddTasksSheet />
       </div>
       <Suspense fallback={<div>Loading...</div>}>
         <TableView
