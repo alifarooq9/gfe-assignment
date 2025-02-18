@@ -9,7 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { PlusCircleIcon, Trash2Icon } from "lucide-react";
+import { Loader2Icon, PlusCircleIcon, Trash2Icon } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -37,33 +37,9 @@ import {
   STATUS_OPTIONS,
 } from "@/config/task-options";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-
-const createTaskSchema = z.object({
-  title: z.string().min(2, {
-    message: "Title must be at least 2 character long",
-  }),
-  priority: z
-    .enum(["low", "medium", "high", "urgent", "none"], {
-      message:
-        "Priority must be one of the following: low, medium, high, urgent, none",
-    })
-    .default("none"),
-  status: z
-    .enum(["not_started", "in_progress", "completed"], {
-      message:
-        "Status must be one of the following: not_started, in_progress, completed",
-    })
-    .default("not_started"),
-  customFields: z
-    .array(
-      z.object({
-        name: z.string().min(1, "Field name is required"),
-        type: z.enum(["text", "number", "checkbox", "dateTime"]),
-        value: z.union([z.string(), z.number(), z.boolean(), z.date()]),
-      }),
-    )
-    .optional(),
-});
+import { createTaskSchema } from "@/server/db/schema";
+import { useMutation } from "@tanstack/react-query";
+import { createTaskAction } from "@/server/actions/tasks/actions";
 
 export default function AddTasksSheet() {
   const form = useForm<z.infer<typeof createTaskSchema>>({
@@ -80,8 +56,21 @@ export default function AddTasksSheet() {
     name: "customFields",
   });
 
-  const onSubmit = (data: z.infer<typeof createTaskSchema>) => {
-    console.log(data);
+  const { mutateAsync: createTaskTrigger, isPending } = useMutation({
+    mutationFn: async (data: z.infer<typeof createTaskSchema>) => {
+      const response = await createTaskAction(data);
+      return response;
+    },
+    onSuccess: () => {
+      console.log("success");
+    },
+    onError: () => {
+      console.log("error");
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof createTaskSchema>) => {
+    await createTaskTrigger(data);
   };
 
   return (
@@ -402,6 +391,9 @@ export default function AddTasksSheet() {
                   Draft
                 </Button>
                 <Button type="submit" className="w-full">
+                  {isPending ? (
+                    <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+                  ) : null}
                   Submit
                 </Button>
               </div>

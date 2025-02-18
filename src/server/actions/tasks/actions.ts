@@ -3,6 +3,8 @@
 import { mock } from "@/config/mock-data";
 import { z } from "zod";
 import { unstable_noStore as noStore } from "next/cache";
+import { createTaskSchema, customFields, tasks } from "@/server/db/schema";
+import { db } from "@/server/db";
 
 const getTasksSchema = z.object({
   rowSize: z
@@ -107,4 +109,63 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
     maxPage,
     data: paginatedData,
   };
+}
+
+// create task action
+export async function createTaskAction(
+  params: z.infer<typeof createTaskSchema>,
+) {
+  noStore();
+
+  try {
+    const validedRequestBody = createTaskSchema.safeParse(params);
+
+    if (validedRequestBody.success === false) {
+      return {
+        success: false,
+        message: `${validedRequestBody.error.issues[0]?.path[0]} - ${validedRequestBody.error.issues[0]?.message}`,
+      };
+    }
+
+    const task = await db
+      .insert(tasks)
+      .values({
+        title: validedRequestBody.data.title,
+        priority: validedRequestBody.data.priority,
+        status: validedRequestBody.data.status,
+      })
+      .returning({ insertedId: tasks.id })
+      .execute();
+
+    if (!task[0]?.insertedId) {
+      return {
+        success: false,
+        message: "Failed to create task",
+      };
+    }
+
+    if (validedRequestBody.data.customFields) {
+      for (const field of validedRequestBody.data.customFields) {
+        await db
+          .insert(customFields)
+          .values({
+            name: field.name,
+            type: field.type,
+            value: String(field.value),
+            taskId: task[0].insertedId,
+          })
+          .execute();
+      }
+    }
+
+    return {
+      success: true,
+      data: task,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: (error as Error).message ?? "Failed to create task",
+    };
+  }
 }
