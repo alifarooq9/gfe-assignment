@@ -1,5 +1,5 @@
 import AddTasksSheet from "@/app/dashboard/table/components/add-tasks-sheet";
-import { TableView } from "@/app/dashboard/table/components/tableview";
+import { TasksTable } from "@/app/dashboard/table/components/tasks-table";
 import { Suspense } from "react";
 
 type TableViewPageProps = {
@@ -24,7 +24,7 @@ export default async function TableViewPage({
         <AddTasksSheet />
       </div>
       <Suspense fallback={<div>Loading...</div>}>
-        <TableView
+        <TasksTable
           searchParams={{
             page: params.page as string,
             rowSize: params.rowSize as string,

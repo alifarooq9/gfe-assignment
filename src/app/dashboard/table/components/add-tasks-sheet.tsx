@@ -40,8 +40,11 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { createTaskSchema } from "@/server/db/schema";
 import { useMutation } from "@tanstack/react-query";
 import { createTaskAction } from "@/server/actions/tasks/actions";
+import { useRouter } from "next/navigation";
 
 export default function AddTasksSheet() {
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof createTaskSchema>>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: {
@@ -66,6 +69,9 @@ export default function AddTasksSheet() {
     },
     onError: () => {
       console.log("error");
+    },
+    onSettled: () => {
+      router.refresh();
     },
   });
 

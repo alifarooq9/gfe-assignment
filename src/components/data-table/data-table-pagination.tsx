@@ -73,6 +73,10 @@ export function DataTablePagination({ maxPage }: TablePaginationProps) {
     if (page > maxPage) {
       setPage(maxPage);
     }
+
+    if (page === 0 && maxPage > 0) {
+      setPage(1);
+    }
   }, [rowSize, maxPage, page, setPage]);
 
   return (

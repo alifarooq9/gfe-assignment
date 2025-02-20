@@ -1,18 +1,8 @@
-import {
-  type Column,
-  DataTable,
-  type RowSize,
-} from "@/components/data-table/data-table";
+import { TasksTableClient } from "@/app/dashboard/table/components/tasks-table-client";
+import { type RowSize } from "@/components/data-table/data-table";
 import type { SearchParam } from "@/components/data-table/data-table-search-filter";
 import { getTasksAction } from "@/server/actions/tasks/actions";
 import type { Task } from "@/server/actions/tasks/types";
-
-const taskColumns: Column<Task>[] = [
-  { header: "Task ID", accessor: "id", sortable: true },
-  { header: "Title", accessor: "title", sortable: true },
-  { header: "Priority", accessor: "priority" },
-  { header: "Status", accessor: "status" },
-];
 
 type TableViewProps = {
   searchParams: {
@@ -23,7 +13,7 @@ type TableViewProps = {
   };
 };
 
-export async function TableView(params: TableViewProps) {
+export async function TasksTable(params: TableViewProps) {
   const taskRequest = await getTasksAction({
     page: params.searchParams.page
       ? Number(params.searchParams.page)
@@ -42,11 +32,9 @@ export async function TableView(params: TableViewProps) {
   }
 
   return (
-    <DataTable
+    <TasksTableClient
       data={taskRequest.data as Task[]}
-      columns={taskColumns}
       maxPage={taskRequest.maxPage!}
-      searchFilterAccessor="title"
     />
   );
 }

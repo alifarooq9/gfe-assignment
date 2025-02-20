@@ -14,8 +14,9 @@ import { DataTableSearchFilter } from "@/components/data-table/data-table-search
 
 export type Column<T> = {
   header: string;
-  accessor: keyof T | ((row: T) => React.ReactNode);
+  accessor: keyof T;
   sortable?: boolean;
+  cell?: (row: T) => React.ReactNode;
 };
 
 type DataTableProps<T> = {
@@ -56,10 +57,9 @@ export function DataTable<T>({
               data.map((row, index) => (
                 <TableRow key={index}>
                   {columns.map((column, colIndex) => {
-                    const content =
-                      typeof column.accessor === "function"
-                        ? column.accessor(row)
-                        : (row[column.accessor] as React.ReactNode);
+                    const content = column.cell
+                      ? column.cell(row)
+                      : (row[column.accessor] as React.ReactNode);
 
                     return <TableCell key={colIndex}>{content}</TableCell>;
                   })}

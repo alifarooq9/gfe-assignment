@@ -5,6 +5,7 @@ import { z } from "zod";
 import { unstable_noStore as noStore } from "next/cache";
 import { createTaskSchema, customFields, tasks } from "@/server/db/schema";
 import { db } from "@/server/db";
+import { and, asc, desc, like, sql } from "drizzle-orm";
 
 const getTasksSchema = z.object({
   rowSize: z
@@ -23,92 +24,85 @@ const getTasksSchema = z.object({
     .optional(),
 });
 
-const data = mock;
-
 export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
   noStore();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  const validedRequestBody = getTasksSchema.safeParse(params);
-
-  if (validedRequestBody.success === false) {
+  const validated = getTasksSchema.safeParse(params);
+  if (!validated.success) {
     return {
       success: false,
-      message: `${validedRequestBody.error.issues[0]?.path[0]} - ${validedRequestBody.error.issues[0]?.message}`,
+      message: `${validated.error.issues[0]?.path[0]} - ${validated.error.issues[0]?.message}`,
     };
   }
 
-  // Get the default row size from the URL params if it exists and is valid
-  const rowSize =
-    params.rowSize && [10, 20, 30, 40, 50].includes(params.rowSize)
-      ? params.rowSize
-      : 10;
+  const { rowSize = 10, page = 1, sortBy, search } = validated.data;
+  const offset = (page - 1) * rowSize;
+  const [field, direction] = sortBy?.split(".") ?? [];
 
-  // Get the default page from the URL params if it exists and is valid can't be greater than the max page
-  const page = params.page && params.page > 0 ? params.page : 1;
-
-  const [accessor, direction] = params.sortBy?.split(".") ?? [];
-
-  let processedData = data;
-
-  // Apply sorting if specified, it should not keep the first on uppercase, it should consider all the words in lowercase
-  if (params.sortBy && accessor && direction) {
-    processedData = data.sort((a, b) => {
-      const aValue = a[accessor as keyof typeof a];
-      const bValue = b[accessor as keyof typeof b];
-
-      const aValueStr = String(aValue).toLowerCase();
-      const bValueStr = String(bValue).toLowerCase();
-
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        if (aValueStr < bValueStr) {
-          return direction === "asc" ? -1 : 1;
-        } else if (aValueStr > bValueStr) {
-          return direction === "asc" ? 1 : -1;
-        } else {
-          return 0;
-        }
-      } else if (typeof aValue === "number" && typeof bValue === "number") {
-        return direction === "asc" ? aValue - bValue : bValue - aValue;
-      } else if (typeof aValue === "boolean" && typeof bValue === "boolean") {
-        return direction === "asc"
-          ? Number(aValue) - Number(bValue)
-          : Number(bValue) - Number(aValue);
-      } else {
-        return 0;
-      }
-    });
-  } else {
-    // default to sorting by id in ascending order
-    processedData = data.sort((a, b) => {
-      return a.id - b.id;
-    });
+  // Build conditions for partial search
+  const conditions = [];
+  if (search) {
+    conditions.push(
+      like(
+        // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
+        tasks[search.searchAccessor as keyof typeof tasks],
+        `%${search.value.toLowerCase()}%`,
+      ),
+    );
   }
 
-  // Apply search
-  if (params.search) {
-    processedData = processedData.filter((item: Record<string, unknown>) => {
-      const value = item[params.search!.searchAccessor];
-      return (
-        typeof value === "string" &&
-        value.toLowerCase().includes(params.search!.value.toLowerCase())
-      );
-    });
+  // Build orderBy
+  let orderBy = asc(tasks.id);
+  if (field && direction === "asc") {
+    // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
+    orderBy = asc(tasks[field as keyof typeof tasks]);
+  } else if (field && direction === "desc") {
+    // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
+    orderBy = desc(tasks[field as keyof typeof tasks]);
   }
 
-  // Apply pagination
-  const startIndex = rowSize * (page - 1);
-  const endIndex = rowSize * page;
-  const paginatedData = processedData.slice(startIndex, endIndex);
+  // Main query
+  const dbData = await db.query.tasks.findMany({
+    with: { customFields: true },
+    where: conditions.length ? and(...conditions) : undefined,
+    offset,
+    limit: rowSize,
+    orderBy,
+  });
 
-  // Calculate the maximum number of pages based on the number of rows and the row size
-  const maxPage = Math.ceil(processedData.length / rowSize);
+  // Count total for pagination
+  const totalRes = await db
+    .select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
+    .from(tasks)
+    .where(conditions.length ? and(...conditions) : undefined);
 
   return {
     success: true,
-    maxPage,
-    data: paginatedData,
+    maxPage: Math.ceil((totalRes[0]?.count ?? 0) / rowSize),
+    data: dbData,
   };
+}
+
+// get all custom fields created by user
+export async function getCustomFieldsAction() {
+  noStore();
+
+  try {
+    const customFields = await db.query.customFields.findMany();
+
+    //custom fields keys
+    const customFieldsKeys = customFields.map((field) => field.name);
+
+    return {
+      success: true,
+      data: { customFields, customFieldsKeys },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: (error as Error).message,
+    };
+  }
 }
 
 // create task action
