@@ -1,11 +1,11 @@
 "use server";
 
-import { mock } from "@/config/mock-data";
 import { z } from "zod";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_noStore as noStore, revalidateTag } from "next/cache";
 import { createTaskSchema, customFields, tasks } from "@/server/db/schema";
 import { db } from "@/server/db";
 import { and, asc, desc, like, sql } from "drizzle-orm";
+import { TAGS } from "@/config/tags";
 
 const getTasksSchema = z.object({
   rowSize: z
@@ -52,7 +52,7 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
   }
 
   // Build orderBy
-  let orderBy = asc(tasks.id);
+  let orderBy = desc(tasks.createdAt);
   if (field && direction === "asc") {
     // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
     orderBy = asc(tasks[field as keyof typeof tasks]);
@@ -83,6 +83,12 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
   };
 }
 
+interface GroupedData {
+  name: string;
+  type: "text" | "number" | "checkbox" | "dateTime";
+  values: string[];
+}
+
 // get all custom fields created by user
 export async function getCustomFieldsAction() {
   noStore();
@@ -90,12 +96,32 @@ export async function getCustomFieldsAction() {
   try {
     const customFields = await db.query.customFields.findMany();
 
-    //custom fields keys
-    const customFieldsKeys = customFields.map((field) => field.name);
+    // Group by a composite key built from lowercased name and type
+    const grouped = customFields.reduce(
+      (acc: Record<string, GroupedData>, { name, type, value }) => {
+        // Convert both name and type to lowercase for grouping
+        const key = `${name.toLowerCase()}|${type}`;
+
+        if (!acc[key]) {
+          // You can choose to store the lowercased version, or preserve the original casing from the first occurrence
+          acc[key] = { name: name.toLowerCase(), type: type, values: [] };
+        }
+        // Convert value to lowercase before checking for duplicates
+        const lowerValue = value.toLowerCase();
+        if (!acc[key].values.includes(lowerValue)) {
+          acc[key].values.push(lowerValue);
+        }
+        return acc;
+      },
+      {} as Record<string, GroupedData>,
+    );
+
+    // Convert the grouped object into an array of objects
+    const customFieldsColumns: GroupedData[] = Object.values(grouped);
 
     return {
       success: true,
-      data: { customFields, customFieldsKeys },
+      data: { customFields, customFieldsColumns },
     };
   } catch (error) {
     return {
@@ -139,17 +165,18 @@ export async function createTaskAction(
     }
 
     if (validedRequestBody.data.customFields) {
-      for (const field of validedRequestBody.data.customFields) {
-        await db
-          .insert(customFields)
-          .values({
-            name: field.name,
-            type: field.type,
-            value: String(field.value),
-            taskId: task[0].insertedId,
-          })
-          .execute();
-      }
+      await db
+        .insert(customFields)
+        .values(
+          validedRequestBody.data.customFields.map((c) => ({
+            ...c,
+            taskId: task[0]!.insertedId,
+            value: String(c.value),
+          })),
+        )
+        .execute();
+
+      revalidateTag(TAGS.customFields.getCustomFileds);
     }
 
     return {

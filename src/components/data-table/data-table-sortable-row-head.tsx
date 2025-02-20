@@ -27,9 +27,14 @@ export function DataTableSortableRowHead<T>({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams);
 
+  const sortAccessor = column.customSortAccessor ?? column.accessor;
+
   // handle sorting
   const handleSort = (column: Column<T>, direction: "asc" | "desc") => {
-    params.set("sortBy", `${column.accessor.toString()}.${direction}`);
+    params.set(
+      "sortBy",
+      `${(column.customSortAccessor ?? column.accessor).toString()}.${direction}`,
+    );
     router.push(`${pathname}?${params.toString()}`);
   };
   const removeSort = () => {
@@ -40,7 +45,7 @@ export function DataTableSortableRowHead<T>({
   const isSortable = column.sortable ?? false;
   const sortByParams = params.get("sortBy");
   const isSorted = sortByParams
-    ? sortByParams.split(".")[0] === column.accessor.toString()
+    ? sortByParams.split(".")[0] === sortAccessor.toString()
     : false;
   const isSortedAsc = sortByParams
     ? sortByParams.split(".")[1] === "asc"
@@ -56,7 +61,7 @@ export function DataTableSortableRowHead<T>({
               type="button"
               variant="ghost"
               size="sm"
-              className="gap-1 text-sm"
+              className="gap-1 text-sm capitalize"
             >
               {column.header}{" "}
               {isSorted ? (
@@ -100,6 +105,6 @@ export function DataTableSortableRowHead<T>({
       </TableHead>
     );
   } else {
-    return <TableHead>{column.header}</TableHead>;
+    return <TableHead className="capitalize">{column.header}</TableHead>;
   }
 }

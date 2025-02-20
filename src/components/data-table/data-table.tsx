@@ -17,6 +17,7 @@ export type Column<T> = {
   accessor: keyof T;
   sortable?: boolean;
   cell?: (row: T) => React.ReactNode;
+  customSortAccessor?: string;
 };
 
 type DataTableProps<T> = {

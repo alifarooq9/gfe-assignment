@@ -1,8 +1,13 @@
 import { TasksTableClient } from "@/app/dashboard/table/components/tasks-table-client";
 import { type RowSize } from "@/components/data-table/data-table";
 import type { SearchParam } from "@/components/data-table/data-table-search-filter";
-import { getTasksAction } from "@/server/actions/tasks/actions";
+import { TAGS } from "@/config/tags";
+import {
+  getCustomFieldsAction,
+  getTasksAction,
+} from "@/server/actions/tasks/actions";
 import type { Task } from "@/server/actions/tasks/types";
+import { unstable_cache as cache } from "next/cache";
 
 type TableViewProps = {
   searchParams: {
@@ -13,8 +18,8 @@ type TableViewProps = {
   };
 };
 
-export async function TasksTable(params: TableViewProps) {
-  const taskRequest = await getTasksAction({
+async function getTasks(params: TableViewProps) {
+  return await getTasksAction({
     page: params.searchParams.page
       ? Number(params.searchParams.page)
       : undefined,
@@ -26,15 +31,27 @@ export async function TasksTable(params: TableViewProps) {
       ? (JSON.parse(params.searchParams.search) as SearchParam)
       : undefined,
   });
+}
 
-  if (!taskRequest.success) {
-    return <div>Error: {taskRequest.message}</div>;
+const getCustomFields = cache(
+  async () => getCustomFieldsAction(),
+  [TAGS.customFields.getCustomFileds],
+  { tags: [TAGS.customFields.getCustomFileds] },
+);
+
+export async function TasksTable(params: TableViewProps) {
+  const tasks = await getTasks(params);
+  const customFields = await getCustomFields();
+
+  if (!tasks.success) {
+    return <div>Error: {tasks.message}</div>;
   }
 
   return (
     <TasksTableClient
-      data={taskRequest.data as Task[]}
-      maxPage={taskRequest.maxPage!}
+      tasks={tasks.data as Task[]}
+      maxPage={tasks.maxPage!}
+      customFields={customFields.data}
     />
   );
 }
