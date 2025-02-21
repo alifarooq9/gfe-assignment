@@ -18,9 +18,9 @@
   - [x] Change the page controls.
   - [x] Clearly indicate the current page.
   - [x] Allow dynamic adjustment of the page size.
-- [ ] **Milestone 5** – Database persistence *(transition from localStorage to a database)*
-  - [ ] Implement reading from the database.
-  - [ ] Implement writing to the database.
+- [x] **Milestone 5** – Database persistence *(transition from localStorage to a database)*
+  - [x] Implement reading from the database.
+  - [x] Implement writing to the database.
 - [ ] **Milestone 6** – Custom fields
   - [ ] Add custom fields to tasks
     - [x] Provide an interface within the modal form for adding custom fields.
