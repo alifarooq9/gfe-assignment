@@ -4,8 +4,9 @@ import { z } from "zod";
 import { unstable_noStore as noStore, revalidateTag } from "next/cache";
 import { createTaskSchema, customFields, tasks } from "@/server/db/schema";
 import { db } from "@/server/db";
-import { and, asc, desc, like, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { TAGS } from "@/config/tags";
+import { Task } from "@/server/actions/tasks/types";
 
 const getTasksSchema = z.object({
   rowSize: z
@@ -37,42 +38,109 @@ export async function getTasksAction(params: z.infer<typeof getTasksSchema>) {
 
   const { rowSize = 10, page = 1, sortBy, search } = validated.data;
   const offset = (page - 1) * rowSize;
-  const [field, direction] = sortBy?.split(".") ?? [];
 
-  // Build conditions for partial search
+  // Parse sort parameters
+  const sortParts = sortBy?.split(".") ?? [];
+  const isCustomField = sortParts[0] === "customFields";
+  const direction = sortParts[isCustomField ? 2 : 1] ?? "desc";
+  const fieldName = sortParts[isCustomField ? 1 : 0];
+
+  // Build search conditions
   const conditions = [];
   if (search) {
     conditions.push(
       like(
-        // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
         tasks[search.searchAccessor as keyof typeof tasks],
         `%${search.value.toLowerCase()}%`,
       ),
     );
   }
 
-  // Build orderBy
-  let orderBy = desc(tasks.createdAt);
-  if (field && direction === "asc") {
-    // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
-    orderBy = asc(tasks[field as keyof typeof tasks]);
-  } else if (field && direction === "desc") {
-    // @ts-expect-error - Type 'string' is not assignable to type 'Column<Task>'
-    orderBy = desc(tasks[field as keyof typeof tasks]);
+  let dbData: Task[];
+
+  if (isCustomField && fieldName) {
+    // Determine the type of the custom field
+    const typeQuery = await db
+      .select({ type: customFields.type })
+      .from(customFields)
+      .where(eq(customFields.name, fieldName))
+      .limit(1);
+
+    const customFieldType = typeQuery[0]?.type || "text"; // Default to 'text'
+
+    // Subquery to get the custom field value for sorting
+    const sortValue = sql`(SELECT value FROM ${customFields} WHERE task_id = ${tasks.id} AND name = ${fieldName} LIMIT 1)`;
+
+    // Cast the value based on its type
+    let castedSortValue;
+    switch (customFieldType) {
+      case "number":
+        castedSortValue = sql`CAST(COALESCE(${sortValue}, '0') AS REAL)`;
+        break;
+      case "dateTime":
+        castedSortValue = sql`COALESCE(${sortValue}, '1970-01-01T00:00:00')`;
+        break;
+      case "checkbox":
+        castedSortValue = sql`CAST(COALESCE(${sortValue}, '0') AS INTEGER)`;
+        break;
+      case "text":
+      default:
+        castedSortValue = sql`COALESCE(${sortValue}, '')`;
+    }
+
+    // Subquery to check if the custom field exists
+    const hasCustomField = sql`EXISTS(SELECT 1 FROM ${customFields} WHERE task_id = ${tasks.id} AND name = ${fieldName})`;
+
+    // Main query to fetch sorted task IDs
+    const sortedTasksQuery = db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(
+        desc(hasCustomField), // Tasks with the custom field come first
+        direction === "desc" ? desc(castedSortValue) : asc(castedSortValue), // Then sort by value
+      )
+      .limit(rowSize)
+      .offset(offset);
+
+    const sortedTaskIds = (await sortedTasksQuery).map((task) => task.id);
+
+    if (sortedTaskIds.length > 0) {
+      // Fetch full task data including custom fields
+      const fullTasks = await db.query.tasks.findMany({
+        where: inArray(tasks.id, sortedTaskIds),
+        with: {
+          customFields: true,
+        },
+      });
+
+      // Reorder the tasks based on the sorted task IDs
+      const taskMap = new Map(fullTasks.map((task) => [task.id, task]));
+      dbData = sortedTaskIds.map((id) => taskMap.get(id)!);
+    } else {
+      dbData = [];
+    }
+  } else {
+    // Regular task field sorting
+    const orderBy =
+      direction === "desc"
+        ? desc(tasks[fieldName as keyof typeof tasks])
+        : asc(tasks[fieldName as keyof typeof tasks]);
+
+    dbData = await db.query.tasks.findMany({
+      with: {
+        customFields: true,
+      },
+      where: conditions.length ? and(...conditions) : undefined,
+      offset,
+      limit: rowSize,
+      orderBy: fieldName ? orderBy : desc(tasks.createdAt),
+    });
   }
 
-  // Main query
-  const dbData = await db.query.tasks.findMany({
-    with: { customFields: true },
-    where: conditions.length ? and(...conditions) : undefined,
-    offset,
-    limit: rowSize,
-    orderBy,
-  });
-
-  // Count total for pagination
+  // Get total count for pagination
   const totalRes = await db
-    .select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
+    .select({ count: sql<number>`COUNT(DISTINCT ${tasks.id})`.mapWith(Number) })
     .from(tasks)
     .where(conditions.length ? and(...conditions) : undefined);
 
@@ -107,9 +175,12 @@ export async function getCustomFieldsAction() {
           acc[key] = { name: name.toLowerCase(), type: type, values: [] };
         }
         // Convert value to lowercase before checking for duplicates
-        const lowerValue = value.toLowerCase();
-        if (!acc[key].values.includes(lowerValue)) {
-          acc[key].values.push(lowerValue);
+        let lowerValue = value;
+        if (type === "text") {
+          lowerValue = (value as string).toLowerCase();
+        }
+        if (!acc[key].values.includes(lowerValue as string)) {
+          acc[key].values.push(lowerValue as string);
         }
         return acc;
       },
@@ -168,11 +239,25 @@ export async function createTaskAction(
       await db
         .insert(customFields)
         .values(
-          validedRequestBody.data.customFields.map((c) => ({
-            ...c,
-            taskId: task[0]!.insertedId,
-            value: String(c.value),
-          })),
+          validedRequestBody.data.customFields.map((c) => {
+            let value = c.value;
+
+            if (c.type === "text") {
+              value = String(value);
+            } else if (c.type === "number") {
+              value = Number(value);
+            } else if (c.type === "checkbox") {
+              value = Boolean(value);
+            } else if (c.type === "dateTime") {
+              value = new Date(value as string);
+            }
+
+            return {
+              ...c,
+              taskId: task[0]!.insertedId,
+              value,
+            };
+          }),
         )
         .execute();
 

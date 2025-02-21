@@ -35,12 +35,12 @@ export function TasksTableClient({
     header: c.name,
     accessor: c.name,
     cell: (row) => {
-      const value = row.customFields.find(
+      const value = row?.customFields?.find(
         (f) =>
           f.name.toLowerCase() === c.name.toLowerCase() && f.type === c.type,
       )?.value;
 
-      if (!value) return "";
+      if (!value) return "-";
 
       if (c.type === "text") {
         return <span>{String(value)}</span>;
@@ -49,9 +49,9 @@ export function TasksTableClient({
       } else if (c.type === "checkbox") {
         return <span>{Boolean(value) ? "Check" : "No"}</span>;
       } else if (c.type === "dateTime") {
-        return <span>{format(new Date(value), "PP")}</span>;
+        return <span>{format(new Date(value as string), "PP")}</span>;
       } else {
-        return <span></span>;
+        return <span>-</span>;
       }
     },
     customSortAccessor: "customFields." + c.name,

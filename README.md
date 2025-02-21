@@ -23,14 +23,14 @@
   - [ ] Implement writing to the database.
 - [ ] **Milestone 6** – Custom fields
   - [ ] Add custom fields to tasks
-    - [ ] Provide an interface within the modal form for adding custom fields.
-    - [ ] Allow adding new fields with a name, type, and value.
+    - [x] Provide an interface within the modal form for adding custom fields.
+    - [x] Allow adding new fields with a name, type, and value.
     - [ ] Enable deletion of custom fields.
     - [ ] Enable editing of custom fields.
   - [ ] Dynamically display custom fields in the task view
-    - [ ] Show custom fields within the task details.
+    - [x] Show custom fields within the task details.
     - [ ] Allow users to sort and filter tasks by custom fields.
-    - [ ] Ensure tasks missing custom field data display a default state.
+    - [x] Ensure tasks missing custom field data display a default state.
 
 #### Additional Milestones
 

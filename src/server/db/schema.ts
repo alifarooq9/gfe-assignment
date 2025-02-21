@@ -2,7 +2,7 @@
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
 import { relations, sql } from "drizzle-orm";
-import { int, sqliteTableCreator, text } from "drizzle-orm/sqlite-core";
+import { int, sqliteTableCreator, text, union } from "drizzle-orm/sqlite-core";
 import { z } from "zod";
 
 /**
@@ -53,7 +53,9 @@ export const customFields = createTable("custom_field", {
   })
     .$type<"text" | "number" | "checkbox" | "dateTime">()
     .notNull(),
-  value: text("value").notNull(),
+  value: text("value", { mode: "json" })
+    .$type<string | number | boolean | Date>()
+    .notNull(),
 });
 
 export const customFieldsRelations = relations(customFields, ({ one }) => ({
